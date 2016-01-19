@@ -1,0 +1,46 @@
+[hekad]
+maxprocs = 4
+max_process_inject = 10000
+plugin_chansize = 10000
+base_dir="/hms/data/crm-etl"
+share_dir = "/home/udara/dev/heka/heka/"
+
+####################### Inputs ###################
+
+[demo_log]
+type = "LogstreamerInput"
+log_directory = "/hms/logs/test"
+file_match = 'demo.log'
+decoder = "log_decoder"
+rescan_interval="1000ms"
+
+####################### Decoder ###################
+
+[log_decoder]
+type = "SandboxDecoder"
+filename = "lua/template-decoder.lua"
+preserve_data = true
+   [log_decoder.config]
+   sdp = '{"template-type":"Sdp trans log","template-version":"V0.0.1","parameters":[{"position":1,"name":"customer-id","type":"string"},{"position":2,"name":"timestamp","type":"date","pattern": ""},{"position":3,"name":"telephone","type":"String"}]}'
+
+######################## Filters ###################
+
+[sdp-event-filter]
+type = "SandboxFilter"
+message_matcher = "Fields[type] == 'event_decoded'"
+filename = "lua/counter/demo-filter.lua"
+preserve_data = true
+memory_limit = 20000000
+
+
+####################### Outputs ###################
+
+[mongo_events_output]
+type = "SandboxOutput"
+message_matcher =  "Fields[type] == 'events'"
+filename = "lua/output/demo-output.lua"
+
+
+[PayloadEncoder]
+append_newlines = true
+
